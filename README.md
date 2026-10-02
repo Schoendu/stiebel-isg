@@ -35,4 +35,9 @@ The first milestone establishes the repository structure, telemetry data contrac
 - Secrets and credentials must never be committed.
 - Local microSD CSV logging remains available as a fallback.
 
+The ingest function reads its privileged Supabase key from the environment
+variable named by `ISG_SECRET_KEY_NAME` (which defaults to `default`). This
+indirection keeps the secret server-side without using the reserved
+`SUPABASE_*` prefix for a custom environment variable.
+
 See `AGENTS.md` for hardware and protocol constraints that must be preserved by automated code changes.
