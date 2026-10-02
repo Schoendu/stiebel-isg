@@ -997,7 +997,8 @@ void initWebServer() {
   });
   server.onNotFound([]() { server.send(404, "text/plain", "Not found"); });
   server.begin();
-  Serial.println("[HTTP] Server started");}
+  Serial.println("[HTTP] Server started");
+}
 
 // ============================================================
 // Console summary
