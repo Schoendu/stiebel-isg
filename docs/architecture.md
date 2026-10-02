@@ -32,6 +32,6 @@ Grafana
 - Grafana is the primary visualization and analysis layer.
 - Configuration values and events may use slower or event-driven storage later.
 
-## Initial milestone
+## Current milestone
 
-The bootstrap phase defines the repository, telemetry contract and database schema only. ESP32 cloud upload is intentionally deferred until the contract is reviewed.
+The repository defines the telemetry contract and database schema and provides a dedicated authenticated ingestion Edge Function. ESP32 cloud upload remains intentionally deferred.

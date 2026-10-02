@@ -37,7 +37,7 @@ Row Level Security is enabled on `public.measurements`.
 The bootstrap migration creates no public read or write policy and explicitly revokes table access from Supabase `anon` and `authenticated` roles.
 
 Planned access paths:
-- ESP32 writes through a dedicated authenticated ingestion endpoint using server-side privileges.
+- ESP32 writes through the dedicated authenticated `ingest` Edge Function using server-side privileges. Its exact JSON contract and deployment instructions are documented in [`supabase/functions/ingest/README.md`](../supabase/functions/ingest/README.md).
 - Grafana reads through a dedicated read-only database identity or an equivalently restricted path.
 - Privileged Supabase keys must never be embedded in firmware or browser clients.
 
