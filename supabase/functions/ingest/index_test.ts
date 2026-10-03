@@ -153,7 +153,6 @@ function fullPayload(): Record<string, unknown> {
   return payload;
 }
 
-
 class TestStore implements MeasurementStore {
   saved: Record<string, unknown>[] = [];
   fail = false;
