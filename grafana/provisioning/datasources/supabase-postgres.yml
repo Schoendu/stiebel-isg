@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: Supabase PostgreSQL
+    uid: stiebel-supabase
+    type: postgres
+    access: proxy
+    url: $__env{SUPABASE_DB_HOST}:$__env{SUPABASE_DB_PORT}
+    user: $__env{SUPABASE_DB_USER}
+    secureJsonData:
+      password: $__env{SUPABASE_DB_PASSWORD}
+    jsonData:
+      database: $__env{SUPABASE_DB_NAME}
+      sslmode: require
+      maxOpenConns: 5
+      maxIdleConns: 2
+      maxIdleConnsAuto: false
+      connMaxLifetime: 14400
+      timeInterval: 1m
+      timescaledb: false
+    editable: false
