@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Grafana Cloud import variant of the STIEBEL ELTRON ISG telemetry dashboard. Select the Supabase PostgreSQL datasource during import.",
+  "description": "Grafana Cloud variant of the STIEBEL ELTRON ISG telemetry dashboard. Select the Supabase PostgreSQL datasource from the Datasource variable, then select the device.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -28,7 +28,7 @@
       "title": "Outside",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 0,
@@ -74,7 +74,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -90,7 +90,7 @@
       "title": "DHW actual",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 4,
@@ -136,7 +136,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -152,7 +152,7 @@
       "title": "Thermal power",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 8,
@@ -198,7 +198,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -214,7 +214,7 @@
       "title": "Compressor",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 12,
@@ -272,7 +272,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -288,7 +288,7 @@
       "title": "Upload age",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 16,
@@ -334,7 +334,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -350,7 +350,7 @@
       "title": "Modbus",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 20,
@@ -408,7 +408,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -424,7 +424,7 @@
       "title": "Temperatures",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 0,
@@ -498,7 +498,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -514,7 +514,7 @@
       "title": "Thermal power & flow rate",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 12,
@@ -616,7 +616,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -632,7 +632,7 @@
       "title": "Refrigerant pressures",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 0,
@@ -706,7 +706,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -722,7 +722,7 @@
       "title": "Hot-gas temperature",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 12,
@@ -796,7 +796,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -812,7 +812,7 @@
       "title": "Operating states",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 0,
@@ -865,7 +865,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -881,7 +881,7 @@
       "title": "Daily heat & electricity",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 0,
@@ -955,7 +955,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -971,7 +971,7 @@
       "title": "Communication diagnostics",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_SUPABASE_POSTGRESQL}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "x": 12,
@@ -1045,7 +1045,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_SUPABASE_POSTGRESQL}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -1067,6 +1067,20 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "postgres",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "current": {
           "selected": false,
           "text": "heatpump-main",
@@ -1074,7 +1088,7 @@
         },
         "datasource": {
           "type": "postgres",
-          "uid": "${DS_SUPABASE_POSTGRESQL}"
+          "uid": "${datasource}"
         },
         "definition": "SELECT DISTINCT device_id FROM public.measurements ORDER BY 1",
         "hide": 0,
@@ -1101,15 +1115,5 @@
   "title": "STIEBEL ISG Overview",
   "uid": "stiebel-isg-overview",
   "version": 1,
-  "weekStart": "monday",
-  "__inputs": [
-    {
-      "name": "DS_SUPABASE_POSTGRESQL",
-      "label": "Supabase PostgreSQL",
-      "description": "Select the PostgreSQL data source connected to the Supabase measurements database.",
-      "type": "datasource",
-      "pluginId": "postgres",
-      "pluginName": "PostgreSQL"
-    }
-  ]
+  "weekStart": "monday"
 }
