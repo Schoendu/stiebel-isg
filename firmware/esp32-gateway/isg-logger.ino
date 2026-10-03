@@ -34,14 +34,26 @@
 #include <FS.h>
 #include <SD_MMC.h>
 #include <WebServer.h>
+#include <HTTPClient.h>
+#include <NetworkClientSecure.h>
+#include <esp_timer.h>
 #include <time.h>
 #include <math.h>
+
+#if __has_include("secrets.h")
+#include "secrets.h"
+#else
+#define ISG_CLOUD_DEVICE_ID ""
+#define ISG_CLOUD_INGEST_TOKEN ""
+#endif
 
 // ============================================================
 // Configuration
 // ============================================================
 
 static const char *HOSTNAME = "isg-logger";
+static const char *SUPABASE_INGEST_URL =
+  "https://zocxinsxtfudedtvozkf.supabase.co/functions/v1/ingest";
 
 IPAddress ISG_IP(192, 168, 178, 48);
 static const uint16_t ISG_PORT = 502;
@@ -393,6 +405,285 @@ double hp1HeatingEfficiency() {
 
 double hp1DhwEfficiency() {
   return safeRatio(combineEnergy(3527, 3528), combineEnergy(3537, 3538));
+}
+
+// ============================================================
+// Supabase cloud telemetry
+// ============================================================
+
+String cloudTimestamp(time_t t) {
+  if (t < 1700000000) return "";
+
+  struct tm tmValue;
+  gmtime_r(&t, &tmValue);
+
+  char buffer[32];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", &tmValue);
+  return String(buffer);
+}
+
+String cloudFieldName(const char *source) {
+  String name(source);
+  name.replace("deltaT", "delta_t");
+  name.replace("kWh", "kwh");
+  name.replace("MWh", "mwh");
+  name.replace("_kW", "_kw");
+  name.replace("_C", "_c");
+  name.replace("_K", "_k");
+  name.toLowerCase();
+  return name;
+}
+
+String jsonEscape(const char *value) {
+  String escaped;
+  if (!value) return escaped;
+
+  for (const char *p = value; *p; ++p) {
+    switch (*p) {
+      case '\\': escaped += "\\\\"; break;
+      case '"': escaped += "\\\""; break;
+      case '\n': escaped += "\\n"; break;
+      case '\r': escaped += "\\r"; break;
+      case '\t': escaped += "\\t"; break;
+      default:
+        if (static_cast<uint8_t>(*p) >= 0x20) escaped += *p;
+        break;
+    }
+  }
+  return escaped;
+}
+
+void appendJsonSeparator(String &json, bool &first) {
+  if (!first) json += ',';
+  first = false;
+}
+
+void appendJsonString(
+  String &json,
+  bool &first,
+  const char *name,
+  const char *value
+) {
+  appendJsonSeparator(json, first);
+  json += '\"';
+  json += name;
+  json += "\":\"";
+  json += jsonEscape(value);
+  json += '\"';
+}
+
+void appendJsonNumber(
+  String &json,
+  bool &first,
+  const String &name,
+  double value,
+  int digits
+) {
+  if (isnan(value) || isinf(value)) return;
+  appendJsonSeparator(json, first);
+  json += '\"';
+  json += name;
+  json += "\":";
+  json += String(value, digits);
+}
+
+void appendJsonUnsigned(
+  String &json,
+  bool &first,
+  const char *name,
+  uint64_t value
+) {
+  char valueBuffer[24];
+  snprintf(
+    valueBuffer,
+    sizeof(valueBuffer),
+    "%llu",
+    static_cast<unsigned long long>(value)
+  );
+
+  appendJsonSeparator(json, first);
+  json += '\"';
+  json += name;
+  json += "\":";
+  json += valueBuffer;
+}
+
+void appendJsonBoolean(
+  String &json,
+  bool &first,
+  const String &name,
+  bool value
+) {
+  appendJsonSeparator(json, first);
+  json += '\"';
+  json += name;
+  json += "\":";
+  json += value ? "true" : "false";
+}
+
+bool cloudBooleanRegister(const String &name) {
+  return
+    name == "defrost_initiated" ||
+    name == "heating_circuit1_pump" ||
+    name == "buffer_charging_pump1" ||
+    name == "dhw_charging_pump" ||
+    name == "dhw_circulation_pump" ||
+    name == "compressor1";
+}
+
+String buildCloudPayload() {
+  String json;
+  json.reserve(8192);
+  json += '{';
+  bool first = true;
+
+  appendJsonString(json, first, "device_id", ISG_CLOUD_DEVICE_ID);
+
+  String timestamp = cloudTimestamp(time(nullptr));
+  appendJsonString(json, first, "timestamp", timestamp.c_str());
+
+  // Mirror every valid raw register from the local CSV contract.
+  // Invalid/unavailable Modbus values are omitted rather than sent as null.
+  for (size_t i = 0; i < REG_COUNT; i++) {
+    if (!regs[i].valid) continue;
+
+    String name = cloudFieldName(regs[i].name);
+    if (cloudBooleanRegister(name)) {
+      appendJsonBoolean(json, first, name, regs[i].raw != 0);
+    } else {
+      appendJsonNumber(json, first, name, regs[i].value, displayDigits(regs[i]));
+    }
+  }
+
+  appendJsonNumber(json, first, "heatpump1_delta_t_k", hpDeltaT(), 2);
+  appendJsonNumber(json, first, "thermal_power_kw", thermalPowerKw(), 3);
+  appendJsonNumber(json, first, "pressure_ratio", pressureRatio(), 3);
+  appendJsonNumber(json, first, "dhw_delta_target_k", dhwDeltaTarget(), 2);
+  appendJsonNumber(json, first, "heating_efficiency", heatingEfficiency(), 3);
+  appendJsonNumber(json, first, "dhw_efficiency", dhwEfficiency(), 3);
+  appendJsonNumber(
+    json,
+    first,
+    "hp1_heating_efficiency",
+    hp1HeatingEfficiency(),
+    3
+  );
+  appendJsonNumber(json, first, "hp1_dhw_efficiency", hp1DhwEfficiency(), 3);
+
+  RegisterDef *fixed = findReg(3, 1508);
+  bool fixedEnabled =
+    fixed && fixed->raw != 0x9000 && fixed->raw != 0x8000;
+  appendJsonBoolean(
+    json,
+    first,
+    "fixed_value_operation_enabled",
+    fixedEnabled
+  );
+
+  appendJsonUnsigned(
+    json,
+    first,
+    "live_poll_errors",
+    lastPollErrors[POLL_LIVE]
+  );
+  appendJsonUnsigned(
+    json,
+    first,
+    "energy_poll_errors",
+    lastPollErrors[POLL_ENERGY]
+  );
+  appendJsonUnsigned(
+    json,
+    first,
+    "config_poll_errors",
+    lastPollErrors[POLL_CONFIG]
+  );
+  appendJsonUnsigned(json, first, "total_modbus_errors", totalModbusErrors);
+  appendJsonUnsigned(
+    json,
+    first,
+    "device_uptime_s",
+    static_cast<uint64_t>(esp_timer_get_time()) / 1000000ULL
+  );
+  appendJsonBoolean(
+    json,
+    first,
+    "modbus_ok",
+    lastPollErrors[POLL_LIVE] == 0
+  );
+  appendJsonBoolean(json, first, "sd_ok", sdMounted);
+
+  json += '}';
+  return json;
+}
+
+bool cloudConfigured() {
+  return
+    strlen(ISG_CLOUD_DEVICE_ID) > 0 &&
+    strlen(ISG_CLOUD_INGEST_TOKEN) > 0;
+}
+
+bool uploadTelemetry() {
+  if (!ethernetConnected) return false;
+
+  if (!cloudConfigured()) {
+    Serial.println("[CLOUD] Disabled: secrets.h is not configured");
+    return false;
+  }
+
+  if (!timeSynchronized || time(nullptr) < 1700000000) {
+    Serial.println("[CLOUD] Skipped: time is not synchronized");
+    return false;
+  }
+
+  String payload = buildCloudPayload();
+  if (payload.length() > 16 * 1024) {
+    Serial.print("[CLOUD] Payload too large: ");
+    Serial.println(payload.length());
+    return false;
+  }
+
+  NetworkClientSecure client;
+  // Arduino-ESP32 3.3.12+ provides the built-in Mozilla CA bundle.
+  // This keeps TLS verification enabled without pinning a short-lived
+  // Supabase leaf/intermediate certificate in firmware.
+  client.useBuiltinCACertBundle();
+
+  HTTPClient https;
+  https.setConnectTimeout(10000);
+  https.setTimeout(10000);
+
+  if (!https.begin(client, SUPABASE_INGEST_URL)) {
+    Serial.println("[CLOUD] HTTPS begin failed");
+    return false;
+  }
+
+  https.addHeader("Content-Type", "application/json");
+  https.addHeader("X-ISG-Token", ISG_CLOUD_INGEST_TOKEN);
+
+  Serial.print("[CLOUD] POST bytes=");
+  Serial.println(payload.length());
+
+  int httpCode = https.POST(payload);
+  bool ok = httpCode == 202;
+
+  if (httpCode > 0) {
+    Serial.print("[CLOUD] HTTP ");
+    Serial.println(httpCode);
+    if (!ok) {
+      String response = https.getString();
+      if (response.length()) {
+        Serial.print("[CLOUD] Response: ");
+        Serial.println(response);
+      }
+    }
+  } else {
+    Serial.print("[CLOUD] Request failed: ");
+    Serial.println(https.errorToString(httpCode));
+  }
+
+  https.end();
+  return ok;
 }
 
 // ============================================================
@@ -1058,6 +1349,7 @@ void setup() {
     pollGroup(POLL_CONFIG);
     printLiveSummary();
     if (sdMounted && saveSnapshot()) Serial.println("[SD] Initial snapshot saved");
+    uploadTelemetry();
   } else {
     Serial.println("[ETH] No network yet; polling will start after link/IP is available");
   }
@@ -1088,6 +1380,8 @@ void loop() {
       if (saveSnapshot()) Serial.println("[SD] Snapshot saved");
       else Serial.println("[SD] Snapshot write failed");
     }
+
+    uploadTelemetry();
   }
 
   // If the board came online after boot, initialize all groups immediately.
@@ -1098,6 +1392,7 @@ void loop() {
     pollGroup(POLL_CONFIG);
     printLiveSummary();
     if (sdMounted) saveSnapshot();
+    uploadTelemetry();
   }
 
   delay(2);
