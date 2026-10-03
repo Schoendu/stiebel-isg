@@ -29,7 +29,7 @@ minute.
 ## Grafana Cloud import
 
 Use `stiebel-isg-overview-cloud.json` for manual import into Grafana Cloud.
-It contains a PostgreSQL datasource input and prompts you to select the existing
-`Supabase PostgreSQL` datasource during import. The provisioned
+It uses a dashboard-level PostgreSQL datasource variable. After import, select
+`Supabase PostgreSQL` in the `Datasource` dropdown, then select the device. The provisioned
 `stiebel-isg-overview.json` keeps the fixed datasource UID for self-hosted
 provisioning.
