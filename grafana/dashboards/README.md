@@ -1,13 +1,26 @@
 # Grafana dashboards
 
-Dashboard JSON exports will live here.
+`stiebel-isg-overview.json` is the first provisioned dashboard for the HEMS
+telemetry stack.
 
-Planned panels:
-- temperatures: outside, flow, return, DHW actual/target
+It uses the fixed PostgreSQL datasource UID `stiebel-supabase` and a query
+variable named `device`.
+
+Included panels:
+
+- current outside temperature
+- current DHW temperature
+- current thermal power
+- compressor state
+- latest upload age
+- Modbus health
+- outside / flow / return / DHW temperature trends
 - thermal power and hydraulic flow rate
+- refrigerant low/high pressure
 - hot-gas temperature
-- high/low refrigerant pressure
-- compressor and pump state timelines
-- daily heat/electricity
-- compressor starts and runtime
-- communication diagnostics
+- compressor, pump and defrost state timeline
+- daily heat/electricity counters
+- Modbus polling diagnostics
+
+The default time range is 24 hours and the dashboard refresh interval is one
+minute.
