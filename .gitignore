@@ -23,3 +23,6 @@ supabase/.temp/
 
 # Grafana runtime/local data
 grafana/data/
+
+# Local firmware secrets
+firmware/esp32-gateway/secrets.h
