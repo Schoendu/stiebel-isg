@@ -1,0 +1,38 @@
+# .github/workflows/deno-tests.yml
+
+name: Deno tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: lts
+          cache: true
+
+      - name: Check formatting
+        run: deno fmt --check supabase/functions/ingest
+
+      - name: Type check
+        run: |
+          deno check \
+            supabase/functions/ingest/index.ts \
+            supabase/functions/ingest/index_test.ts
+
+      - name: Run tests
+        run: deno test supabase/functions/ingest/index_test.ts
