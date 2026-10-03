@@ -24,3 +24,12 @@ Included panels:
 
 The default time range is 24 hours and the dashboard refresh interval is one
 minute.
+
+
+## Grafana Cloud import
+
+Use `stiebel-isg-overview-cloud.json` for manual import into Grafana Cloud.
+It contains a PostgreSQL datasource input and prompts you to select the existing
+`Supabase PostgreSQL` datasource during import. The provisioned
+`stiebel-isg-overview.json` keeps the fixed datasource UID for self-hosted
+provisioning.
