@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Grafana Cloud variant of the STIEBEL ELTRON ISG telemetry dashboard. Select the Supabase PostgreSQL datasource from the Datasource variable, then select the device.",
+  "description": "STIEBEL ISG heat-pump telemetry. WP thermal power is a hydraulic estimate from heat-pump flow rate and WP flow/return temperatures. It is not the heat delivered to the house-side heating circuit. House-side thermal power and an instantaneous COP require additional measurements.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -33,7 +33,7 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 4
       },
       "fieldConfig": {
@@ -93,9 +93,9 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "x": 4,
+        "x": 3,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 4
       },
       "fieldConfig": {
@@ -147,17 +147,80 @@
       ]
     },
     {
-      "id": 3,
+      "id": 14,
       "type": "stat",
-      "title": "Thermal power",
+      "title": "WP ΔT (active flow)",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
       },
       "gridPos": {
-        "x": 8,
+        "x": 6,
         "y": 0,
-        "w": 4,
+        "w": 3,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "kelvin",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp AS time, CASE WHEN COALESCE(heatpump1_flowrate_lmin, 0) > 0 THEN GREATEST(COALESCE(heatpump1_delta_t_k, 0), 0) ELSE 0 END AS value FROM public.measurements WHERE device_id = ${device:sqlstring} ORDER BY timestamp DESC LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "description": "Heat-pump-side spread: WP flow (register 543) minus WP return (542). Displayed as 0 K when the measured WP flow rate is zero."
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "WP thermal power",
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 0,
+        "w": 3,
         "h": 4
       },
       "fieldConfig": {
@@ -203,10 +266,11 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT timestamp AS time, thermal_power_kw AS value FROM public.measurements WHERE device_id = ${device:sqlstring} ORDER BY timestamp DESC LIMIT 1",
+          "rawSql": "SELECT timestamp AS time, CASE WHEN compressor1 IS TRUE AND COALESCE(heatpump1_flowrate_lmin,0) > 0 AND COALESCE(heatpump1_delta_t_k,0) > 0 THEN thermal_power_kw WHEN compressor1 IS FALSE THEN 0 ELSE NULL END AS value FROM public.measurements WHERE device_id = ${device:sqlstring} ORDER BY timestamp DESC LIMIT 1",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Derived hydraulic heat-pump output: 0.998 × 4.186 / 60 × WP flow rate × (WP flow − WP return). Negative/idle artefacts are suppressed. This is WP-side output, not house-side radiator output."
     },
     {
       "id": 4,
@@ -219,7 +283,7 @@
       "gridPos": {
         "x": 12,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 4
       },
       "fieldConfig": {
@@ -283,6 +347,81 @@
       ]
     },
     {
+      "id": 15,
+      "type": "stat",
+      "title": "Buffer charge pump 1",
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "OFF"
+                },
+                "1": {
+                  "text": "ON"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp AS time, buffer_charging_pump1::int AS value FROM public.measurements WHERE device_id = ${device:sqlstring} ORDER BY timestamp DESC LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "description": "WPM status register 2512: Pufferladepumpe 1. This is a binary pump status, not a flow-rate measurement."
+    },
+    {
       "id": 5,
       "type": "stat",
       "title": "Upload age",
@@ -291,9 +430,9 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "x": 16,
+        "x": 18,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 4
       },
       "fieldConfig": {
@@ -353,9 +492,9 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "x": 20,
+        "x": 21,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 4
       },
       "fieldConfig": {
@@ -421,7 +560,7 @@
     {
       "id": 7,
       "type": "timeseries",
-      "title": "Temperatures",
+      "title": "WP temperatures & spread",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
@@ -429,6 +568,303 @@
       "gridPos": {
         "x": 0,
         "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 3,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "WP ΔT"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "kelvin"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  outside_temperature_c AS \"Outside\",\n  heatpump1_flow_c AS \"WP flow\",\n  heatpump1_return_c AS \"WP return\",\n  CASE\n    WHEN COALESCE(heatpump1_flowrate_lmin, 0) > 0\n     AND COALESCE(heatpump1_delta_t_k, 0) > 0\n    THEN heatpump1_delta_t_k\n    ELSE NULL\n  END AS \"WP ΔT\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
+          "refId": "A"
+        }
+      ],
+      "description": "Heat-pump-side flow/return temperatures with outside temperature. ΔT is shown only while WP flow is present, to avoid idle/stagnation artefacts."
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "WP thermal power & flow rate",
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 3,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "WP thermal power"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "kwatt"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "WP flow rate"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "litrepm"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  CASE\n    WHEN compressor1 IS TRUE\n     AND COALESCE(heatpump1_flowrate_lmin, 0) > 0\n     AND COALESCE(heatpump1_delta_t_k, 0) > 0\n    THEN thermal_power_kw\n    WHEN compressor1 IS FALSE THEN 0\n    ELSE NULL\n  END AS \"WP thermal power\",\n  heatpump1_flowrate_lmin AS \"WP flow rate\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
+          "refId": "A"
+        }
+      ],
+      "description": "WP-side hydraulic estimate. Power is shown only for plausible active compressor operation. The ISG WP flow-rate measurement does not provide the secondary heating-circuit flow rate."
+    },
+    {
+      "id": 11,
+      "type": "state-timeline",
+      "title": "Hydraulics & operating states",
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "OFF"
+                },
+                "1": {
+                  "text": "ON"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "alignValue": "left",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "showValue": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  compressor1::int AS \"Compressor 1\",\n  buffer_charging_pump1::int AS \"Buffer charging pump 1\",\n  heating_circuit1_pump::int AS \"HC1 pump\",\n  dhw_charging_pump::int AS \"DHW charging pump\",\n  dhw_circulation_pump::int AS \"DHW circulation\",\n  defrost_initiated::int AS \"Defrost\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
+          "refId": "A"
+        }
+      ],
+      "description": "Pump states are binary WPM statuses. In particular, HC1 pump ON/OFF and buffer charging pump ON/OFF are not flow measurements."
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Buffer & HC1 temperatures",
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 19,
         "w": 12,
         "h": 8
       },
@@ -503,128 +939,11 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp AS time,\n  outside_temperature_c AS \"Outside\",\n  heatpump1_flow_c AS \"Flow\",\n  heatpump1_return_c AS \"Return\",\n  dhw_actual_c AS \"DHW actual\",\n  dhw_target_c AS \"DHW target\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
+          "rawSql": "SELECT\n  timestamp AS time,\n  buffer_temperature_actual_c AS \"Buffer actual\",\n  buffer_temperature_target_c AS \"Buffer target\",\n  heating_circuit1_actual_c AS \"HC1 actual\",\n  heating_circuit1_target_c AS \"HC1 target\",\n  return_temperature_actual_c AS \"System return\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
           "refId": "A"
         }
-      ]
-    },
-    {
-      "id": 8,
-      "type": "timeseries",
-      "title": "Thermal power & flow rate",
-      "datasource": {
-        "type": "postgres",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 4,
-        "w": 12,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 8,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Thermal power"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "kwatt"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Flow rate"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "litrepm"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp AS time,\n  thermal_power_kw AS \"Thermal power\",\n  heatpump1_flowrate_lmin AS \"Flow rate\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
-          "refId": "A"
-        }
-      ]
+      ],
+      "description": "WPM system values: buffer actual/target, HC1 actual/target and system return. Availability and interpretation depend on the hydraulic configuration. These temperatures alone do not allow house-side thermal-power calculation without a separate heating-circuit flow rate."
     },
     {
       "id": 9,
@@ -635,8 +954,8 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "x": 0,
-        "y": 12,
+        "x": 12,
+        "y": 19,
         "w": 12,
         "h": 8
       },
@@ -725,8 +1044,8 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "x": 12,
-        "y": 12,
+        "x": 0,
+        "y": 27,
         "w": 12,
         "h": 8
       },
@@ -807,75 +1126,6 @@
       ]
     },
     {
-      "id": 11,
-      "type": "state-timeline",
-      "title": "Operating states",
-      "datasource": {
-        "type": "postgres",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 20,
-        "w": 24,
-        "h": 7
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "text": "OFF"
-                },
-                "1": {
-                  "text": "ON"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "dark-red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "alignValue": "left",
-        "mergeValues": true,
-        "rowHeight": 0.9,
-        "showValue": "auto",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp AS time,\n  compressor1::int AS \"Compressor\",\n  heating_circuit1_pump::int AS \"HC1 pump\",\n  buffer_charging_pump1::int AS \"Buffer pump\",\n  dhw_charging_pump::int AS \"DHW pump\",\n  dhw_circulation_pump::int AS \"DHW circulation\",\n  defrost_initiated::int AS \"Defrost\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
-          "refId": "A"
-        }
-      ]
-    },
-    {
       "id": 12,
       "type": "timeseries",
       "title": "Daily heat & electricity",
@@ -884,7 +1134,7 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 27,
         "w": 12,
         "h": 8
@@ -963,7 +1213,8 @@
           "rawSql": "SELECT\n  timestamp AS time,\n  heat_heating_today_kwh AS \"Heat heating\",\n  electricity_heating_today_kwh AS \"Electricity heating\",\n  heat_dhw_today_kwh AS \"Heat DHW\",\n  electricity_dhw_today_kwh AS \"Electricity DHW\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Cumulative daily energy counters, not instantaneous electrical power. Do not divide these directly into the instantaneous hydraulic WP power to obtain a momentary COP."
     },
     {
       "id": 13,
@@ -974,9 +1225,9 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "x": 12,
-        "y": 27,
-        "w": 12,
+        "x": 0,
+        "y": 35,
+        "w": 24,
         "h": 8
       },
       "fieldConfig": {
@@ -1053,7 +1304,8 @@
           "rawSql": "SELECT\n  timestamp AS time,\n  live_poll_errors AS \"Live poll errors\",\n  energy_poll_errors AS \"Energy poll errors\",\n  config_poll_errors AS \"Config poll errors\"\nFROM public.measurements\nWHERE $__timeFilter(timestamp)\n  AND device_id = ${device:sqlstring}\nORDER BY timestamp",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Modbus poll-error counters for the three polling groups."
     }
   ],
   "refresh": "1m",
@@ -1062,7 +1314,9 @@
     "stiebel",
     "isg",
     "heatpump",
-    "hems"
+    "hems",
+    "thermal",
+    "hydraulics"
   ],
   "templating": {
     "list": [
