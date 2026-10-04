@@ -107,3 +107,49 @@ stiebel-supabase
 
 The dashboard defaults to the last 24 hours, refreshes every minute and offers a
 `device` variable for selecting the telemetry source.
+
+
+## 6. Thermal and hydraulic interpretation
+
+The dashboard deliberately distinguishes heat-pump-side measurements from
+house-side heating-circuit measurements.
+
+The current collector reads the dedicated heat-pump 1 values:
+
+- register 542: heat-pump return temperature
+- register 543: heat-pump flow temperature
+- register 548: heat-pump water flow rate
+
+The firmware derives:
+
+```text
+heatpump1_delta_t_k = heatpump1_flow_c - heatpump1_return_c
+
+thermal_power_kw =
+  heatpump1_flowrate_lmin
+  × 0.998
+  × 4.186
+  × heatpump1_delta_t_k
+  / 60
+```
+
+This is a hydraulic estimate of heat-pump-side thermal output. The dashboard
+suppresses negative/idle artefacts for the displayed WP thermal-power series.
+
+The WPM pump status fields are binary operating states:
+
+- `buffer_charging_pump1`: register 2512, buffer charging pump 1
+- `heating_circuit1_pump`: register 2509, heating circuit pump 1
+
+They are not flow-rate measurements. Therefore the existing ISG data is not
+sufficient to calculate heat delivered by the secondary heating circuit. That
+would require a separate heating-circuit flow-rate measurement in addition to
+appropriate heating-circuit flow/return temperatures.
+
+The dashboard also exposes buffer and HC1 temperature values when available.
+Their usefulness depends on the actual WPM/hydraulic configuration.
+
+No instantaneous electrical heat-pump power is currently ingested. Daily
+electricity counters must not be combined with instantaneous hydraulic power as
+a momentary COP. Add an instantaneous electrical-power measurement before
+adding a meaningful `COP approx` panel.
